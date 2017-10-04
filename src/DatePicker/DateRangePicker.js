@@ -330,7 +330,7 @@ class DateRangePicker extends Component {
           onClick={this.handleTouchTap}
           ref="input"
           style={textFieldStyle}
-          value={this.formateDateRange(this.state.startDate, this.state.endDate, formatDate)}
+          value={this.formatDateRange(this.state.startDate, this.state.endDate, formatDate)}
         />
         <DateRangePickerDialog
           DateTimeFormat={DateTimeFormat}
