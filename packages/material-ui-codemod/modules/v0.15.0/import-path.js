@@ -14,6 +14,7 @@ const pathConversion = {
   'card/card-title': 'Card/CardTitle',
   'card/card-text': 'Card/CardText',
   'date-picker/date-picker': 'DatePicker',
+  'date-picker/date-range-picker': 'DatePicker/DateRangePicker',
   'dialog': 'Dialog',
   'divider': 'Divider',
   'grid-list/grid-list': 'GridList/GridList',

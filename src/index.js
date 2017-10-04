@@ -14,6 +14,7 @@ export Checkbox from './Checkbox';
 export Chip from './Chip';
 export CircularProgress from './CircularProgress';
 export DatePicker from './DatePicker';
+export DateRangePicker from './DatePicker/DateRangePicker';
 export Dialog from './Dialog';
 export Divider from './Divider';
 export Drawer from './Drawer';
