@@ -47,8 +47,24 @@ class DateRangePickerDialog extends Component {
     muiTheme: PropTypes.object.isRequired,
   };
 
+  // state = {
+  //   open: false,
+  // };
+
   state = {
+    end: {
+      displayDate: undefined,
+      displayMonthDay: undefined,
+      selectedDate: undefined,
+    },
     open: false,
+    start: {
+      displayDate: undefined,
+      displayMonthDay: undefined,
+      selectedDate: undefined,
+    },
+    transitionDirection: 'left',
+    transitionEnter: true,
   };
 
   show = () => {
@@ -167,7 +183,8 @@ class DateRangePickerDialog extends Component {
             target="window"
             onKeyUp={this.handleWindowKeyUp}
           />
-          <Calendar
+
+          <RangeCalendar
             autoOk={autoOk}
             DateTimeFormat={DateTimeFormat}
             cancelLabel={cancelLabel}
@@ -190,28 +207,7 @@ class DateRangePickerDialog extends Component {
             utils={utils}
           />
 
-          <Calendar
-            autoOk={autoOk}
-            DateTimeFormat={DateTimeFormat}
-            cancelLabel={cancelLabel}
-            disableYearSelection={true}
-            firstDayOfWeek={firstDayOfWeek}
-            initialDate={initialEndDate}
-            locale={locale}
-            onTouchTapDay={this.handleTouchTapDay}
-            maxDate={maxEndDate}
-            minDate={minEndDate}
-            mode={mode}
-            open={open}
-            ref="endCalendar"
-            onTouchTapCancel={this.handleTouchTapCancel}
-            onTouchTapOk={this.handleTouchTapOk}
-            okLabel={okLabel}
-            openToYearSelection={false}
-            shouldDisableDate={shouldDisableDate}
-            hideCalendarDate={true}
-            utils={utils}
-          />
+
         </Container>
       </div>
     );

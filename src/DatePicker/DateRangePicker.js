@@ -1,6 +1,6 @@
 import React, {Component} from 'react';
 import PropTypes from 'prop-types';
-import {dateTimeFormat, formatIso, isEqualDate} from './dateUtils';
+import {addDays, dateTimeFormat, formatIso, isEqualDate} from './dateUtils';
 import DateRangePickerDialog from './DateRangePickerDialog';
 import TextField from '../TextField';
 
@@ -216,7 +216,7 @@ class DateRangePicker extends Component {
     } else {
       this.setState({
         dialogStartDate: new Date(),
-        dialogEndDate: this.props.utils.addDays(new Date(), 1),
+        dialogEndDate: addDays(new Date(), 1),
       }, this.refs.dialogWindow.show);
     }
   }
@@ -328,7 +328,7 @@ class DateRangePicker extends Component {
           {...other}
           onFocus={this.handleFocus}
           onClick={this.handleTouchTap}
-          ref="input"
+          ref="inputdaterangepicker"
           style={textFieldStyle}
           value={this.formatDateRange(this.state.startDate, this.state.endDate, formatDate)}
         />
