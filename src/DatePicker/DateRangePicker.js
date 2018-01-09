@@ -1,6 +1,6 @@
 import React, {Component} from 'react';
 import PropTypes from 'prop-types';
-import {addDays, dateTimeFormat, formatIso, isEqualDate} from './dateUtils';
+import {dateTimeFormat, formatIso, isEqualDate} from './dateUtils';
 import DateRangePickerDialog from './DateRangePickerDialog';
 import TextField from '../TextField';
 
@@ -20,6 +20,21 @@ class DateRangePicker extends Component {
      */
     autoOk: PropTypes.bool,
     /**
+     * Used to block datetime ranges on the date range picker
+     */
+    blockedDateTimeRanges: PropTypes.arrayOf(
+      PropTypes.shape({
+        /**
+         * The end datetime of a blocked range
+         */
+        end: PropTypes.object,
+        /**
+         * The start datetime of a blocked range
+         */
+        start: PropTypes.object,
+      })
+    ),
+    /**
      * Override the default text of the 'Cancel' button.
      */
     cancelLabel: PropTypes.node,
@@ -34,18 +49,6 @@ class DateRangePicker extends Component {
      */
     container: PropTypes.oneOf(['dialog', 'inline']),
     /**
-     * This is the initial end-date value of the component.
-     * If either `value` or `valueLink` is provided they will override this
-     * prop with `value` taking precedence.
-     */
-    defaultEndDate: PropTypes.object,
-    /**
-     * This is the initial start-date value of the component.
-     * If either `value` or `valueLink` is provided they will override this
-     * prop with `value` taking precedence.
-     */
-    defaultStartDate: PropTypes.object,
-    /**
      * Override the inline-styles of DatePickerDialog's Container element.
      */
     dialogContainerStyle: PropTypes.object,
@@ -53,6 +56,34 @@ class DateRangePicker extends Component {
      * Disables the DatePicker.
      */
     disabled: PropTypes.bool,
+    /**
+     * This is the container for attributes and methods specific to the 'end' calendar.
+     */
+    end: PropTypes.shape({
+      /**
+       * This is the initial date value of the component.
+       * If either `value` or `valueLink` is provided they will override this
+       * prop with `value` taking precedence.
+       */
+      defaultDate: PropTypes.object,
+      /**
+       * The ending of a range of valid dates. The range includes the endDate.
+       * The default value is current date + 100 years.
+       */
+      maxDate: PropTypes.object,
+      /**
+       * The beginning of a range of valid dates. The range includes the startDate.
+       * The default value is current date - 100 years.
+       */
+      minDate: PropTypes.object,
+      /**
+       * Callback function used to determine if a day's entry should be disabled on the calendar.
+       *
+       * @param {object} day Date object of a day.
+       * @returns {boolean} Indicates whether the day should be disabled.
+       */
+      shouldDisableDate: PropTypes.func,
+    }),
     /**
      * Used to change the first day of week. It varies from
      * Saturday to Monday between different locales.
@@ -73,26 +104,6 @@ class DateRangePicker extends Component {
      * must provide a `DateTimeFormat` that supports the chosen `locale`.
      */
     locale: PropTypes.string,
-    /**
-     * The ending of a range of valid dates for the end-date. The range includes the endDate.
-     * The default value is current date + 100 years.
-     */
-    maxEndDate: PropTypes.object,
-    /**
-     * The ending of a range of valid dates for the start-date. The range includes the endDate.
-     * The default value is current date + 100 years.
-     */
-    maxStartDate: PropTypes.object,
-    /**
-     * The beginning of a range of valid dates for the end-date. The range includes the startDate.
-     * The default value is current date - 100 years.
-     */
-    minEndDate: PropTypes.object,
-    /**
-     * The beginning of a range of valid dates for the start-date. The range includes the startDate.
-     * The default value is current date - 100 years.
-     */
-    minStartDate: PropTypes.object,
     /**
      * Tells the component to display the picker in portrait or landscape mode.
      */
@@ -128,12 +139,33 @@ class DateRangePicker extends Component {
      */
     onShow: PropTypes.func,
     /**
-     * Callback function used to determine if a day's entry should be disabled on the calendar.
-     *
-     * @param {object} day Date object of a day.
-     * @returns {boolean} Indicates whether the day should be disabled.
+     * This is the container for attributes and methods specific to the 'start' calendar.
      */
-    shouldDisableDate: PropTypes.func,
+    start: PropTypes.shape({
+      /**
+       * This is the initial date value of the component.
+       * If either `value` or `valueLink` is provided they will override this
+       * prop with `value` taking precedence.
+       */
+      defaultDate: PropTypes.object,
+      /**
+       * The ending of a range of valid dates. The range includes the endDate.
+       * The default value is current date + 100 years.
+       */
+      maxDate: PropTypes.object,
+      /**
+       * The beginning of a range of valid dates. The range includes the startDate.
+       * The default value is current date - 100 years.
+       */
+      minDate: PropTypes.object,
+      /**
+       * Callback function used to determine if a day's entry should be disabled on the calendar.
+       *
+       * @param {object} day Date object of a day.
+       * @returns {boolean} Indicates whether the day should be disabled.
+       */
+      shouldDisableDate: PropTypes.func,
+    }),
     /**
      * Override the inline-styles of the root element.
      */
@@ -142,6 +174,10 @@ class DateRangePicker extends Component {
      * Override the inline-styles of DatePicker's TextField element.
      */
     textFieldStyle: PropTypes.object,
+    /**
+     * Tells the component to hide or show the underline in the text field component
+     */
+    underlineShow: PropTypes.bool,
     /**
      * This object should contain methods needed to build the calendar system.
      *
@@ -154,7 +190,16 @@ class DateRangePicker extends Component {
     /**
      * Sets the date for the Date Picker programmatically.
      */
-    value: PropTypes.object,
+    value: PropTypes.shape({
+      /**
+       * The end date
+       */
+      end: PropTypes.object,
+      /**
+       * The start date
+       */
+      start: PropTypes.object,
+    }),
   };
 
   static defaultProps = {
@@ -163,6 +208,7 @@ class DateRangePicker extends Component {
     disabled: false,
     firstDayOfWeek: 1,
     style: {},
+    underlineShow: true,
   };
 
   static contextTypes = {
@@ -175,19 +221,31 @@ class DateRangePicker extends Component {
   };
 
   componentWillMount() {
-    this.setState({
-      date: this.isControlled() ? this.getControlledDate() : undefined,
-    });
+    const newDates = this.getControlledDate();
+    if (this.isControlled() && newDates) {
+      this.setState({
+        startDate: newDates.start,
+        endDate: newDates.end,
+      });
+    } else {
+      this.setState({
+        startDate: undefined,
+        endDate: undefined,
+      });
+    }
   }
 
   componentWillReceiveProps(nextProps) {
     if (this.isControlled()) {
       const newDates = this.getControlledDate(nextProps);
-      if (!isEqualDate(this.state.startDate, newDates.start) || !isEqualDate(this.state.endDate, newDates.end)) {
-        this.setState({
-          startDate: newDates.start,
-          endDate: newDates.end,
-        });
+      if (newDates) {
+        if (newDates.start && newDates.end && !isEqualDate(this.state.startDate, newDates.start) ||
+            !isEqualDate(this.state.endDate, newDates.end)) {
+          this.setState({
+            startDate: newDates.start,
+            endDate: newDates.end,
+          });
+        }
       }
     }
   }
@@ -208,7 +266,7 @@ class DateRangePicker extends Component {
      * (get the current system date while doing so)
      * else set it to the currently selected date
      */
-    if (this.state.date !== undefined) {
+    if (this.state.startDate !== undefined && this.state.endDate !== undefined) {
       this.setState({
         dialogStartDate: this.getDates().startDate,
         dialogEndDate: this.getDates().endDate,
@@ -216,7 +274,7 @@ class DateRangePicker extends Component {
     } else {
       this.setState({
         dialogStartDate: new Date(),
-        dialogEndDate: addDays(new Date(), 1),
+        dialogEndDate: new Date(),
       }, this.refs.dialogWindow.show);
     }
   }
@@ -270,7 +328,17 @@ class DateRangePicker extends Component {
   }
 
   formatDateForDisplay(date, dateFormatter, label) {
-    return (date instanceof Date ? dateFormatter(date) : label);
+    if (date instanceof Date) {
+      const day = date.getDate();
+      const month = date.getMonth();
+      let hour = date.getHours();
+      const ampm = (hour < 12 ? 'AM' : 'PM');
+      hour = hour % 12;
+
+      return `${month}/${day} ${hour} ${ampm}`;
+    } else {
+      return label;
+    }
   }
 
   formatDateRange(startDate, endDate, dateFormatter) {
@@ -295,26 +363,25 @@ class DateRangePicker extends Component {
     const {
       DateTimeFormat,
       autoOk,
+      blockedDateTimeRanges,
       cancelLabel,
       className,
       container,
       dialogContainerStyle,
+      end,
       firstDayOfWeek,
       formatDate: formatDateProp,
       locale,
-      maxStartDate,
-      maxEndDate,
-      minStartDate,
-      minEndDate,
       mode,
       okLabel,
       onDismiss,
       onFocus, // eslint-disable-line no-unused-vars
       onShow,
       onClick, // eslint-disable-line no-unused-vars
-      shouldDisableDate,
+      start,
       style,
       textFieldStyle,
+      underlineShow,
       utils,
       ...other
     } = this.props;
@@ -329,30 +396,29 @@ class DateRangePicker extends Component {
           onFocus={this.handleFocus}
           onClick={this.handleTouchTap}
           ref="inputdaterangepicker"
+          underlineShow={underlineShow}
           style={textFieldStyle}
           value={this.formatDateRange(this.state.startDate, this.state.endDate, formatDate)}
         />
         <DateRangePickerDialog
           DateTimeFormat={DateTimeFormat}
           autoOk={autoOk}
+          blockedDateTimeRanges={blockedDateTimeRanges}
           cancelLabel={cancelLabel}
           container={container}
           containerStyle={dialogContainerStyle}
+          end={end}
           firstDayOfWeek={firstDayOfWeek}
           initialStartDate={this.state.dialogStartDate}
           initialEndDate={this.state.dialogEndDate}
           locale={locale}
-          maxStartDate={maxStartDate}
-          maxEndDate={maxEndDate}
-          minStartDate={minStartDate}
-          minEndDate={minEndDate}
           mode={mode}
           okLabel={okLabel}
           onAccept={this.handleAccept}
           onShow={onShow}
           onDismiss={onDismiss}
           ref="dialogWindow"
-          shouldDisableDate={shouldDisableDate}
+          start={start}
           utils={utils}
         />
       </div>

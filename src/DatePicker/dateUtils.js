@@ -1,4 +1,6 @@
 import warning from 'warning';
+import sortBy from 'lodash.sortby';
+import find from 'lodash.find';
 
 const dayAbbreviation = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 const dayList = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -137,6 +139,65 @@ export function isEqualDate(d1, d2) {
     (d1.getDate() === d2.getDate());
 }
 
+export function isEqualDateTime(d1, d2) {
+  return d1 && d2 &&
+    (d1.getFullYear() === d2.getFullYear()) &&
+    (d1.getMonth() === d2.getMonth()) &&
+    (d1.getDate() === d2.getDate()) &&
+    (d1.getHours() === d2.getHours());
+}
+
+export function isDateBetweenDateTime(dateToCheck, startDate, endDate) {
+  const startOfDate = (new Date(dateToCheck.getTime())).setHours(0, 0, 0, 0);
+  const endOfDate = (new Date(dateToCheck.getTime())).setHours(23, 59, 59, 999);
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  return (!(startOfDate < start.getTime()) && !(endOfDate > end.getTime()));
+}
+
+export function isDateTimeBetweenDateTime(dateToCheck, startDate, endDate) {
+  const date = new Date(dateToCheck.getTime());
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  return (!(date < start.getTime()) && !(date > end.getTime()));
+}
+
+export function isDateInRanges(ranges, day) {
+  let inRange = false;
+  if (ranges) {
+    ranges.forEach((range) => {
+      if (isDateBetweenDateTime(day, range.start, range.end)) {
+        inRange = true;
+      }
+    });
+  }
+  return inRange;
+}
+
+export function isDateTimeInRanges(ranges, day) {
+  let inRange = false;
+  if (ranges) {
+    ranges.forEach((range) => {
+      if (isDateTimeBetweenDateTime(day, range.start, range.end)) {
+        inRange = true;
+      }
+    });
+  }
+  return inRange;
+}
+
+export function closestRangeAfterStart(ranges, start) {
+  if (ranges && start) {
+    ranges = sortBy(ranges, (range) => {
+      return range.start.getTime();
+    });
+    return find(ranges, (range) => {
+      return range.start.getTime() > start.getTime();
+    });
+  }
+  return null;
+}
+
 export function isBeforeDate(d1, d2) {
   const date1 = cloneAsDate(d1);
   const date2 = cloneAsDate(d2);
@@ -144,11 +205,19 @@ export function isBeforeDate(d1, d2) {
   return (date1.getTime() < date2.getTime());
 }
 
+export function isBeforeDateTime(d1, d2) {
+  return (d1.getTime() < d2.getTime());
+}
+
 export function isAfterDate(d1, d2) {
   const date1 = cloneAsDate(d1);
   const date2 = cloneAsDate(d2);
 
   return (date1.getTime() > date2.getTime());
+}
+
+export function isAfterDateTime(d1, d2) {
+  return (d1.getTime() > d2.getTime());
 }
 
 export function isBetweenDates(dateToCheck, startDate, endDate) {

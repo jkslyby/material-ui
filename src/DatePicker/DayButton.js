@@ -5,18 +5,33 @@ import {isEqualDate} from './dateUtils';
 import EnhancedButton from '../internal/EnhancedButton';
 
 function getStyles(props, context, state) {
-  const {date, disabled, selected} = props;
+  const {date, disabled, isBetweenDates, isEndDate, isStartDate, selected} = props;
   const {hover} = state;
   const {baseTheme, datePicker} = context.muiTheme;
 
   let labelColor = baseTheme.palette.textColor;
   let buttonStateOpacity = 0;
+  let buttonStateBorderRadius = '50%';
   let buttonStateTransform = 'scale(0)';
+  let buttonStateLeft = 4;
+  let buttonStateWidth = 34;
 
-  if (hover || selected) {
+  if (hover || selected || isBetweenDates) {
     labelColor = datePicker.selectTextColor;
-    buttonStateOpacity = selected ? 1 : 0.6;
+    buttonStateOpacity = (selected || isBetweenDates) ? 1 : 0.6;
     buttonStateTransform = 'scale(1)';
+    if (isEndDate && !isStartDate) {
+      buttonStateLeft = 0;
+      buttonStateWidth = 38;
+      buttonStateBorderRadius = '0% 50% 50% 0%';
+    } else if (isStartDate && !isEndDate) {
+      buttonStateWidth = 38;
+      buttonStateBorderRadius = '50% 0% 0% 50%';
+    } else if (!isEndDate && !isStartDate && isBetweenDates) {
+      buttonStateBorderRadius = '0%';
+      buttonStateLeft = 0;
+      buttonStateWidth = 42;
+    }
   } else if (isEqualDate(date, new Date())) {
     labelColor = datePicker.color;
   }
@@ -38,15 +53,15 @@ function getStyles(props, context, state) {
     },
     buttonState: {
       backgroundColor: datePicker.selectColor,
-      borderRadius: '50%',
+      borderRadius: buttonStateBorderRadius,
       height: 34,
-      left: 4,
+      left: buttonStateLeft,
       opacity: buttonStateOpacity,
       position: 'absolute',
       top: 0,
       transform: buttonStateTransform,
       transition: Transition.easeOut(),
-      width: 34,
+      width: buttonStateWidth,
     },
   };
 }
@@ -56,10 +71,14 @@ class DayButton extends Component {
     DateTimeFormat: PropTypes.func.isRequired,
     date: PropTypes.object,
     disabled: PropTypes.bool,
+    isBetweenDates: PropTypes.bool,
+    isEndDate: PropTypes.bool,
+    isStartDate: PropTypes.bool,
     locale: PropTypes.string.isRequired,
     onClick: PropTypes.func,
     onKeyboardFocus: PropTypes.func,
     selected: PropTypes.bool,
+
   };
 
   static defaultProps = {
@@ -104,6 +123,9 @@ class DayButton extends Component {
       DateTimeFormat,
       date,
       disabled,
+      isBetweenDates, // eslint-disable-line no-unused-vars
+      isEndDate, // eslint-disable-line no-unused-vars
+      isStartDate, // eslint-disable-line no-unused-vars
       locale,
       onClick, // eslint-disable-line no-unused-vars
       selected, // eslint-disable-line no-unused-vars
