@@ -16,7 +16,7 @@ const styles = {
     fontSize: 14,
     fontWeight: '500',
     textAlign: 'center',
-    width: '100%',
+    width: 'calc(100% - 96px)',
   },
   titleText: {
     height: 'inherit',
